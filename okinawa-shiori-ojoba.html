@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🏝️ 沖縄旅行のしおり</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    body { margin: 0; }
+
+    .app {
+      --accent: #0891b2;
+      --text: #1e293b;
+      --text-sub: #64748b;
+      --bg: #f0fdfa;
+      --note-bg: rgba(8,145,178,.06);
+      --warn-bg: rgba(245,158,11,.1);
+      --tab-active: #0891b2;
+      font-family: -apple-system, 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', sans-serif;
+      background: var(--bg);
+      min-height: 100vh;
+      max-width: 480px;
+      margin: 0 auto;
+    }
+
+    .header {
+      background: linear-gradient(135deg, #0891b2, #06b6d4);
+      color: #fff;
+      padding: 20px 16px 14px;
+      text-align: center;
+    }
+    .header-title { font-size: 22px; font-weight: 800; letter-spacing: 1px; }
+    .header-sub { font-size: 12px; opacity: 0.85; margin-top: 4px; }
+
+    .tabs {
+      display: flex;
+      overflow-x: auto;
+      background: #fff;
+      border-bottom: 1px solid rgba(0,0,0,.06);
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+    .tabs::-webkit-scrollbar { display: none; }
+
+    .tab-btn {
+      flex: 0 0 auto;
+      padding: 10px 12px 8px;
+      border: none;
+      border-bottom: 2.5px solid transparent;
+      background: transparent;
+      color: var(--text-sub);
+      font-weight: 400;
+      font-size: 13px;
+      cursor: pointer;
+      white-space: nowrap;
+      font-family: inherit;
+      transition: all .15s;
+    }
+    .tab-btn.active {
+      border-bottom-color: var(--tab-active);
+      color: var(--tab-active);
+      font-weight: 700;
+    }
+    .tab-btn .emoji { font-size: 16px; }
+    .tab-btn .label { font-size: 11px; }
+
+    .day-header {
+      padding: 14px 16px 6px;
+      font-size: 16px;
+      font-weight: 800;
+      color: var(--accent);
+    }
+    .day-header.hidden { display: none; }
+
+    .content { padding: 10px 16px 40px; }
+
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    .section { margin-bottom: 22px; }
+    .section-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--accent);
+      margin-bottom: 10px;
+      letter-spacing: 0.5px;
+    }
+
+    .time {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+    .time-label {
+      min-width: 58px;
+      font-weight: 700;
+      font-size: 13px;
+      color: var(--accent);
+      font-family: 'SF Mono', 'Menlo', monospace;
+      padding-top: 2px;
+      text-align: right;
+      flex-shrink: 0;
+    }
+    .time-body {
+      flex: 1;
+      font-size: 14px;
+      line-height: 1.65;
+      color: var(--text);
+    }
+
+    .note {
+      background: var(--note-bg);
+      border-radius: 10px;
+      padding: 10px 13px;
+      font-size: 13px;
+      line-height: 1.6;
+      margin-bottom: 12px;
+      color: var(--text);
+    }
+    .note.warn { background: var(--warn-bg); }
+    .note.highlight { background: rgba(8,145,178,.12); }
+    .note.freetime { background: rgba(34,197,94,.08); }
+
+    .note-link { margin-top: 6px; }
+    .link {
+      color: var(--accent);
+      font-size: 12px;
+      text-decoration: underline;
+    }
+
+    .freetime-title {
+      font-weight: 700;
+      margin-bottom: 4px;
+      color: #16a34a;
+      font-size: 13px;
+    }
+
+    .hotel-name { font-weight: 700; margin-bottom: 4px; }
+    .hotel-detail { font-size: 12px; opacity: 0.8; }
+    .hotel-extra { font-size: 12px; margin-top: 4px; }
+
+    .shop-name { font-weight: 700; margin-bottom: 2px; }
+    .shop-desc { font-size: 12px; opacity: 0.85; }
+    .shop-hours, .shop-note { font-size: 12px; margin-top: 4px; }
+    .shop-note { margin-top: 2px; opacity: 0.8; }
+
+    .spot { margin-bottom: 8px; }
+    .spot-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 13px;
+      background: rgba(8,145,178,.04);
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--accent);
+      border: 1px solid rgba(8,145,178,.12);
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .spot.open .spot-header { border-radius: 10px 10px 0 0; }
+    .spot-arrow {
+      font-size: 11px;
+      opacity: 0.5;
+      transition: transform .2s;
+    }
+    .spot.open .spot-arrow { transform: rotate(180deg); }
+    .spot-body {
+      display: none;
+      padding: 10px 13px;
+      background: rgba(8,145,178,.04);
+      border-radius: 0 0 10px 10px;
+      font-size: 13px;
+      line-height: 1.7;
+      color: var(--text);
+      border: 1px solid rgba(8,145,178,.12);
+      border-top: none;
+    }
+    .spot.open .spot-body { display: block; }
+
+    .contact-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 0;
+      border-bottom: 1px solid rgba(128,128,128,.1);
+      font-size: 13px;
+    }
+    .contact-tel {
+      color: var(--accent);
+      text-decoration: none;
+      font-weight: 600;
+      font-family: 'SF Mono', monospace;
+    }
+
+    .furigana-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4px 12px;
+    }
+    .furigana-item { font-size: 13px; padding: 4px 0; color: var(--text); }
+    .furigana-kanji { font-weight: 600; }
+    .furigana-kana { opacity: 0.6; font-size: 12px; }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="header">
+      <div class="header-title">🏝️ 沖縄旅行のしおり</div>
+      <div class="header-sub">7/6(月)〜7/9(木) ・ おじ・おば用</div>
+    </div>
+
+    <div class="tabs" role="tablist">
+      <button class="tab-btn active" data-tab="day1" role="tab" aria-selected="true">
+        <span class="emoji">✈️</span><br><span class="label">1日目</span>
+      </button>
+      <button class="tab-btn" data-tab="day2" role="tab" aria-selected="false">
+        <span class="emoji">🐠</span><br><span class="label">2日目</span>
+      </button>
+      <button class="tab-btn" data-tab="day3" role="tab" aria-selected="false">
+        <span class="emoji">🐋</span><br><span class="label">3日目</span>
+      </button>
+      <button class="tab-btn" data-tab="day4" role="tab" aria-selected="false">
+        <span class="emoji">🏠</span><br><span class="label">4日目</span>
+      </button>
+      <button class="tab-btn" data-tab="info" role="tab" aria-selected="false">
+        <span class="emoji">📞</span><br><span class="label">情報</span>
+      </button>
+    </div>
+
+    <div class="day-header" id="day-header">✈️ 7/6(月)　1日目</div>
+
+    <div class="content">
+      <!-- Day 1 -->
+      <div class="tab-panel active" id="panel-day1" role="tabpanel">
+        <div class="section">
+          <div class="section-title">🚃 セントレアへ</div>
+          <div class="time"><div class="time-label">06:10</div><div class="time-body">名鉄 ミュースカイ乗車（推奨！）</div></div>
+          <div class="note">
+            06:10発 → 07:26 セントレア着（1,960円）<br>
+            ※07:41着の便（1,460円）もあるが、手荷物預け08:00に間に合わないリスクあり
+          </div>
+          <div class="time"><div class="time-label">07:26</div><div class="time-body">セントレア着</div></div>
+          <div class="time"><div class="time-label">07:30</div><div class="time-body">手荷物預け・保安検査場へ</div></div>
+          <div class="note">手荷物預け：出発30分前（08:00）まで / 保安検査場：20分前まで / 搭乗口：10分前まで</div>
+        </div>
+        <div class="section">
+          <div class="section-title">✈️ フライト</div>
+          <div class="note"><b>JAL / JTA045便</b><br>08:30 セントレア発 → 10:45 那覇空港着</div>
+        </div>
+        <div class="section">
+          <div class="section-title">🏯 首里城（ゆいレールで移動）</div>
+          <div class="note">
+            那覇空港駅 → 首里駅（約30分・11時台は8分間隔）<br>
+            料金：大人340円<br>
+            首里駅 → 首里城は徒歩約15分
+            <div class="note-link"><a class="link" href="https://www.yui-rail.co.jp/" target="_blank" rel="noopener noreferrer">ゆいレール公式</a></div>
+          </div>
+          <div class="time"><div class="time-label">11:30</div><div class="time-body">ゆいレール乗車</div></div>
+          <div class="time"><div class="time-label">12:00</div><div class="time-body">首里城着 → 散策（約2時間）</div></div>
+          <div class="note">
+            入場料：大人400円<br><br>
+            📝 正殿は2026年秋復元完了予定。今は「見せる復興」で工事見学可能（今だけ！）<br>
+            📝 石畳なのでスニーカー推奨。首里杜館にコインロッカーあり（100円返却式）
+            <div class="note-link"><a class="link" href="https://oki-park.jp/shurijo/" target="_blank" rel="noopener noreferrer">首里城公園 公式</a></div>
+          </div>
+          <div class="spot">
+            <div class="spot-header"><span>🔍 首里城の見どころ</span><span class="spot-arrow">▼</span></div>
+            <div class="spot-body">
+              <b>🏗️ 「見せる復興」（今だけ！）</b><br>
+              2019年の火災で正殿が焼失。2026年秋の完成に向けて復元工事中。素屋根が撤去されて外観が見えるようになった正殿を柵越しに見学できる。見学通路には復元技術や職人の仕事を紹介するパネル展示あり。完成前の今しか見られない貴重な姿！<br><br>
+              <b>🚪 守礼門（しゅれいもん）</b><br>
+              首里城のシンボル。2千円札にも描かれた門。記念写真スポット！<br><br>
+              <b>🧱 城壁＆石畳</b><br>
+              琉球石灰岩で組まれた独特の曲線美。中国と日本の建築様式が融合した琉球独自のスタイル<br><br>
+              <b>👀 御庭（うなー）</b><br>
+              正殿前の広場。赤と白の縞模様のタイルが特徴的。儀式や式典が行われた場所
+            </div>
+          </div>
+        </div>
+        <div class="section">
+          <div class="section-title">🍦 首里城エリアの軽食</div>
+          <div class="note highlight">
+            <div class="shop-name">🍧 首里杜館（すいむいかん）</div>
+            <div class="shop-desc">公園の総合レストハウス。ブルーシールアイス、サーターアンダギー、ポークたまごおにぎりなどの軽食あり。エアコンの効いた室内でゆっくり食べられます</div>
+          </div>
+          <div class="note">守礼門近くにも売店・ベンチあり。ドリンク、アイス、軽食が買えます</div>
+        </div>
+        <div class="section">
+          <div class="section-title">🚕 首里城→モントレ（58号線ドライブ🌊）</div>
+          <div class="time"><div class="time-label">14:00</div><div class="time-body">首里杜館付近でジャンボタクシーお迎え（全員で乗車）</div></div>
+          <div class="note">🌊 国道58号線を通るルート！恩納村あたりからエメラルドグリーンの海が車窓に広がります</div>
+          <div class="time"><div class="time-label">15:30</div><div class="time-body">モントレ着</div></div>
+        </div>
+        <div class="section">
+          <div class="section-title">🏨 モントレ到着後</div>
+          <div class="note">
+            <div class="hotel-name">🏨 ホテルモントレ沖縄</div>
+            <div class="hotel-detail">📍 沖縄県恩納村字冨着1550-1</div>
+            <div class="hotel-detail">☎ 098-993-7111</div>
+            <div class="hotel-extra">2泊 / 2食付き</div>
+            <div class="note-link"><a class="link" href="https://www.hotelmonterey.co.jp/okinawa/" target="_blank" rel="noopener noreferrer">公式サイト</a></div>
+          </div>
+          <div class="time"><div class="time-label">16:00</div><div class="time-body">チェックイン → お部屋で休憩 or プール or 周辺散策</div></div>
+          <div class="note freetime">
+            <div class="freetime-title">🌴 フリータイム</div>
+            <div>こまち家はプールへ。プールに参加 / ホテルでのんびり / 娘と遊ぶなど、その時々で！</div>
+          </div>
+          <div class="time"><div class="time-label">18:00</div><div class="time-body">夕食ビュッフェ（シーフォレスト）✅</div></div>
+          <div class="time"><div class="time-label">19:00</div><div class="time-body">タイガービーチで夕日！🌅 日の入り 19:26〜27頃</div></div>
+        </div>
+      </div>
+
+      <!-- Day 2 -->
+      <div class="tab-panel" id="panel-day2" role="tabpanel">
+        <div class="section">
+          <div class="section-title">朝</div>
+          <div class="time"><div class="time-label">06:30</div><div class="time-body">朝食バイキング（シーフォレスト or 隨縁亭）</div></div>
+        </div>
+        <div class="section">
+          <div class="section-title">午前中</div>
+          <div class="note freetime">
+            <div class="freetime-title">🌴 フリータイム</div>
+            <div>
+              こまち家は海ピクニック＆シュノーケルへ出発（08:00頃〜12:00頃）<br><br>
+              <b>午前中はフリータイムです！</b>おすすめの過ごし方：<br>
+              ・ホテルのプールでのんびり<br>
+              ・タイガービーチをお散歩<br>
+              ・周辺の軽食巡り（↓下のお店リスト参照）<br>
+              ・お部屋でゆっくり
+            </div>
+          </div>
+        </div>
+        <div class="section">
+          <div class="section-title">☕ モントレ周辺おすすめ（徒歩で行ける！）</div>
+          <div class="note highlight">
+            <div class="shop-name">🍩 三矢本舗 恩納店</div>
+            <div class="shop-desc">サーターアンダギー（沖縄ドーナツ）の専門店！プレーン、黒糖、紅芋など。バラ売りで好きな数だけ買えます</div>
+            <div class="shop-hours">🕐 10:00〜18:00</div>
+            <div class="note-link"><a class="link" href="https://www.mitsuyahonpo.com/" target="_blank" rel="noopener noreferrer">公式サイト</a></div>
+          </div>
+          <div class="note highlight">
+            <div class="shop-name">🍙 More Blue</div>
+            <div class="shop-desc">ホテルから徒歩すぐ。ポークたまごおにぎり等の軽食カフェ。1人でふらっと入りやすい雰囲気</div>
+            <div class="shop-hours">🕐 11:00〜15:00 / 17:00〜21:30</div>
+            <div class="shop-note">📝 WEBから空席確認＆予約可</div>
+            <div class="note-link"><a class="link" href="https://moreblue2021.foodre.jp/" target="_blank" rel="noopener noreferrer">公式サイト</a></div>
+          </div>
+          <div class="note">
+            <div class="shop-name">🌮 Blue Entrance Kitchen 沖縄総本店</div>
+            <div class="shop-desc">徒歩約5分、漁港近く。ボリューム満点の沖縄タコスがテイクアウト可</div>
+            <div class="shop-hours">🕐 11:00〜15:00 / 17:00〜21:00</div>
+            <div class="note-link"><a class="link" href="https://www.blueentrancekitchen.com/ja/" target="_blank" rel="noopener noreferrer">公式サイト</a></div>
+          </div>
+        </div>
+        <div class="section">
+          <div class="section-title">🏰 読谷（よみたん）ドライブ ＊全員合流＊</div>
+          <div class="time"><div class="time-label">12:00</div><div class="time-body">座喜味城跡（ざきみじょうあと）で合流</div></div>
+          <div class="note">
+            世界遺産！入場無料！城壁に登れば読谷村全体が見渡せる絶景。15〜20分でサクッと回れます<br><br>
+            → 全員でタクシー → 残波岬（ざんぱみさき）経由 → モントレへ<br>
+            <div class="note-link"><a class="link" href="https://www.yomitan-kankou.jp/tourist/watch/1611289699/" target="_blank" rel="noopener noreferrer">座喜味城跡（読谷村観光協会）</a></div>
+          </div>
+          <div class="spot">
+            <div class="spot-header"><span>🔍 座喜味城跡の見どころ</span><span class="spot-arrow">▼</span></div>
+            <div class="spot-body">
+              <b>🚪 アーチ門</b><br>
+              沖縄に現存する最も古い石造りのアーチ門。中央にクサビ石が打ち込まれていて、他の城では見られない築城技術の高さがわかる<br><br>
+              <b>🧱 城壁</b><br>
+              波打つように大きくせり出した曲線の城壁が特徴。大人5〜6人が並べるほど分厚い城壁の上を歩ける！（沖縄で城壁に登れるのはここと中城城だけ）<br><br>
+              <b>🏯 護佐丸（ごさまる）の城</b><br>
+              15世紀前半、琉球統一に貢献した名将・護佐丸が築城。標高127mの丘の上にあり、晴れた日は那覇まで見渡せる
+            </div>
+          </div>
+          <div class="spot">
+            <div class="spot-header"><span>🔍 残波岬の見どころ</span><span class="spot-arrow">▼</span></div>
+            <div class="spot-body">
+              高さ約30mの断崖絶壁が約2km続く迫力の景勝地。白い残波岬灯台がシンボル。晴れた日は慶良間諸島まで見渡せる。<br><br>
+              「残波大獅子」という日本一大きなシーサー像もある（高さ8.75m！）。車窓からサクッと見るだけでも十分楽しめます
+            </div>
+          </div>
+        </div>
+        <div class="section">
+          <div class="section-title">🍽️ 昼食候補</div>
+          <div class="note">
+            <div class="shop-name">🥩 ステーキハウス ジャム 沖縄恩納村店</div>
+            <div class="shop-desc">ホテルの斜め向かい（徒歩1〜2分）。目の前でシェフが焼くパフォーマンス付き鉄板焼きステーキ</div>
+            <div class="shop-note">📝 要予約推奨（WEBから席のみ予約可）</div>
+            <div class="note-link"><a class="link" href="https://www.jam-groups.com/" target="_blank" rel="noopener noreferrer">公式サイト</a></div>
+          </div>
+          <div class="note">
+            <div class="shop-name">🐷 しまぶた屋 前兼久店</div>
+            <div class="shop-desc">モントレ徒歩約450m。沖縄あぐー豚のとんかつ</div>
+            <div class="note-link"><a class="link" href="https://okinawa-sinka.jp/shop/okinawa-food/" target="_blank" rel="noopener noreferrer">公式サイト</a></div>
+          </div>
+          <div class="note">※18時ビュッフェ控えてるので、軽めでもOK</div>
+        </div>
+        <div class="section">
+          <div class="section-title">午後〜夜</div>
+          <div class="time"><div class="time-label">〜18:00</div><div class="time-body">プール＆タイガービーチ</div></div>
+          <div class="note freetime">
+            <div class="freetime-title">🌴 フリータイム</div>
+            <div>プールに参加 / ホテルでのんびり / 娘と遊ぶなど、その時々で！</div>
+          </div>
+          <div class="time"><div class="time-label">18:00</div><div class="time-body">夕食ビュッフェ（シーフォレスト）✅</div></div>
+          <div class="time"><div class="time-label">19:00</div><div class="time-body">タイガービーチで夕日 🌅 19:26〜27頃</div></div>
+        </div>
+      </div>
+
+      <!-- Day 3 -->
+      <div class="tab-panel" id="panel-day3" role="tabpanel">
+        <div class="section">
+          <div class="section-title">朝</div>
+          <div class="time"><div class="time-label">06:30</div><div class="time-body">朝食バイキング</div></div>
+          <div class="time"><div class="time-label">07:30</div><div class="time-body">チェックアウト</div></div>
+        </div>
+        <div class="section">
+          <div class="section-title">🚌 リゾートライナーで美ら海へ</div>
+          <div class="time"><div class="time-label">08:06</div><div class="time-body">タイガービーチ前 出発</div></div>
+          <div class="note">全員分の席は予約済みです ✅</div>
+          <div class="time"><div class="time-label">09:38</div><div class="time-body">美ら海水族館エリア着</div></div>
+        </div>
+        <div class="section">
+          <div class="section-title">🐋 美ら海水族館（〜14:30頃まで滞在）</div>
+          <div class="note">
+            入場料：大人2,180円 / 再入館OK / クレカ可
+            <div class="note-link"><a class="link" href="https://churaumi.okinawa/" target="_blank" rel="noopener noreferrer">美ら海水族館 公式</a></div>
+          </div>
+          <div class="time"><div class="time-label">10:30</div><div class="time-body">🐬 イルカショー（オキちゃん劇場・無料）</div></div>
+          <div class="note">ショー時間：10:30 / 11:30 / 13:00 / 15:00 / 17:00</div>
+          <div class="time"><div class="time-label">〜14:30</div><div class="time-body">館内見学・自由散策</div></div>
+          <div class="note">
+            <b>黒潮の海（大水槽）</b>：ジンベエザメやマンタが泳ぐ巨大水槽は圧巻！<br>
+            給餌タイム：9:30 / 15:00 / 17:00
+          </div>
+          <div class="spot">
+            <div class="spot-header"><span>🔍 美ら海水族館の見どころ</span><span class="spot-arrow">▼</span></div>
+            <div class="spot-body">
+              <b>🐋 黒潮の海（大水槽）</b><br>
+              幅35m×奥行き27m×深さ10mの巨大水槽。ジンベエザメやマンタが悠々と泳ぐ姿は圧巻。給餌タイムは立ち泳ぎで餌を吸い込む姿が見られる！<br><br>
+              <b>🐬 オキちゃん劇場（イルカショー）</b><br>
+              無料！海をバックにしたオープンエアーのステージで迫力満点<br><br>
+              <b>🐢 ウミガメ館</b><br>
+              上からも横からも観察可能。給餌体験もあり（500円・現金のみ）<br><br>
+              <b>🐚 サンゴ礁の海</b><br>
+              沖縄の浅い海を再現。カラフルな熱帯魚がいっぱい
+            </div>
+          </div>
+        </div>
+        <div class="section">
+          <div class="section-title">🍽️ 水族館内レストラン（昼食）</div>
+          <div class="note highlight">
+            <div class="shop-name">🍽️ レストラン イノー</div>
+            <div class="shop-desc">オーシャンビューのブッフェレストラン</div>
+          </div>
+          <div class="note highlight">
+            <div class="shop-name">☕ カフェ オーシャンブルー</div>
+            <div class="shop-desc">大水槽のすぐ目の前で食べられるカフェ（軽食）。ここでしか味わえない特等席！</div>
+          </div>
+          <div class="note">※周辺にはあまり飲食店がないので、水族館内で食べるのがおすすめです</div>
+        </div>
+        <div class="section">
+          <div class="section-title">🏨 オリオンモトブ チェックイン</div>
+          <div class="time"><div class="time-label">15:00</div><div class="time-body">チェックイン</div></div>
+          <div class="note">
+            <div class="hotel-name">🏨 オリオンホテルモトブリゾート＆スパ</div>
+            <div class="hotel-detail">📍 沖縄県本部町備瀬148-1</div>
+            <div class="hotel-detail">☎ 0980-51-7300</div>
+            <div class="hotel-extra">オーシャンツイン / 朝食付き / ⚠️ 夕食なし（各自手配） / チェックアウト11:00</div>
+            <div class="note-link"><a class="link" href="https://www.okinawaresort-orion.com/" target="_blank" rel="noopener noreferrer">公式サイト</a></div>
+          </div>
+          <div class="note">ウェルカムドリンク：オリオンビール＆ソフトドリンク🍺</div>
+        </div>
+        <div class="section">
+          <div class="section-title">☕ 本部町のおすすめ（ホテル徒歩圏内）</div>
+          <div class="note highlight">
+            <div class="shop-name">☕ スターバックス 沖縄本部町店</div>
+            <div class="shop-desc">琉球松を使った内装が沖縄限定仕様！写真映えスポットとしても◎</div>
+            <div class="note-link"><a class="link" href="https://store.starbucks.co.jp/detail-1543/" target="_blank" rel="noopener noreferrer">公式サイト</a></div>
+          </div>
+          <div class="note highlight">
+            <div class="shop-name">🌮 桜パーラー</div>
+            <div class="shop-desc">タコライス、タコドッグなどの軽食。ふらっと寄れるお店</div>
+            <div class="note-link"><a class="link" href="https://tabelog.com/okinawa/A4702/A470202/47002139/" target="_blank" rel="noopener noreferrer">公式サイト</a></div>
+          </div>
+          <div class="note">
+            <div class="shop-name">🍕 J's Kitchen</div>
+            <div class="shop-desc">ロコモコ、タンドリーチキン、ピザなど。テイクアウト可</div>
+            <div class="note-link"><a class="link" href="https://js-kitchen.owst.jp/" target="_blank" rel="noopener noreferrer">公式サイト</a></div>
+          </div>
+          <div class="note">※桜パーラーやJ's Kitchenなどで買ったものでお部屋パーティーも◎（近くにコンビニもあるので組み合わせもOK）</div>
+        </div>
+        <div class="section">
+          <div class="section-title">午後〜夜</div>
+          <div class="time"><div class="time-label">15:30</div><div class="time-body">プール＆エメラルドビーチ</div></div>
+          <div class="note freetime">
+            <div class="freetime-title">🌴 フリータイム</div>
+            <div>
+              プールに参加 / ホテル周辺の散策やスタバでのんびり / 娘と遊ぶなど、その時々で！<br>
+              エメラルドビーチはホテルから徒歩約2分。お散歩だけでも綺麗です🌊
+            </div>
+          </div>
+          <div class="time"><div class="time-label">18:30</div><div class="time-body">お部屋で夕食🎉</div></div>
+        </div>
+      </div>
+
+      <!-- Day 4 -->
+      <div class="tab-panel" id="panel-day4" role="tabpanel">
+        <div class="section">
+          <div class="section-title">朝</div>
+          <div class="time"><div class="time-label">07:30</div><div class="time-body">朝食バイキング（シリウス 6:30〜10:00）</div></div>
+        </div>
+        <div class="section">
+          <div class="section-title">チェックアウト</div>
+          <div class="time"><div class="time-label">11:00</div><div class="time-body">チェックアウト</div></div>
+        </div>
+        <div class="section">
+          <div class="section-title">🚌 帰路</div>
+          <div class="time"><div class="time-label">11:35</div><div class="time-body">バス停で待機（早めに！7月ハイシーズン）</div></div>
+          <div class="time"><div class="time-label">11:50</div><div class="time-body">高速バス117番（ホテル前から・予約不要・満席なら次便）</div></div>
+          <div class="time"><div class="time-label">14:10</div><div class="time-body">那覇バスターミナル</div></div>
+          <div class="time"><div class="time-label">14:25</div><div class="time-body">那覇空港 国内線ターミナル着</div></div>
+        </div>
+        <div class="section">
+          <div class="section-title">🍽️ 那覇空港で（約1.5時間のフリータイム）</div>
+          <div class="note freetime">
+            <div class="freetime-title">🌴 フリータイム</div>
+            <div>
+              空港内を自由に散策！おすすめ：<br>
+              ・ロイヤルホスト（4階・飛行機見ながらランチ）<br>
+              ・空港内のお土産ショップ巡り<br>
+              ・沖縄グルメの食べ納め
+            </div>
+          </div>
+          <div class="note">
+            <b>おすすめお土産</b><br>
+            紅芋タルト / ちんすこう / 海ぶどう / 泡盛 / シーサーグッズ
+          </div>
+        </div>
+        <div class="section">
+          <div class="section-title">✈️ 帰りのフライト</div>
+          <div class="note">
+            <b>ジェットスター GK380便</b><br>
+            16:50 那覇発（第1ターミナル）→ 19:00 セントレア着
+          </div>
+          <div class="note warn">
+            ⚠️ チェックイン締切：出発30分前（16:20まで）<br>
+            Webチェックイン済みなら保安検査場に直行でOK
+          </div>
+          <div class="time"><div class="time-label">19:00</div><div class="time-body">セントレア着 → お疲れさまでした！🏠</div></div>
+        </div>
+      </div>
+
+      <!-- Info -->
+      <div class="tab-panel" id="panel-info" role="tabpanel">
+        <div class="section">
+          <div class="section-title">📞 連絡先</div>
+          <div class="contact-row">
+            <span>ホテルモントレ沖縄（代表）</span>
+            <a class="contact-tel" href="tel:0989937111">098-993-7111</a>
+          </div>
+          <div class="contact-row">
+            <span>オリオンホテルモトブ</span>
+            <a class="contact-tel" href="tel:0980517300">0980-51-7300</a>
+          </div>
+          <div class="contact-row">
+            <span>JAL国内線</span>
+            <a class="contact-tel" href="tel:0570025022">0570-025-022</a>
+          </div>
+        </div>
+        <div class="section">
+          <div class="section-title">👨‍👩‍👧‍👦 こまちの連絡先</div>
+          <div class="note">
+            何かあればいつでも連絡ください！<br>
+            ※LINEが一番早いです
+          </div>
+        </div>
+        <div class="section">
+          <div class="section-title">🌧️ 雨の日プラン</div>
+          <div class="note">
+            沖縄の7月はスコール型 → 30分で止むことが多い。降ったらホテルで待つ<br>
+            モントレ：屋内プール＆温泉<br>
+            オリオンモトブ：屋内プール＆温泉
+          </div>
+        </div>
+        <div class="section">
+          <div class="section-title">💰 メモ</div>
+          <div class="note">
+            🏧 モントレ・オリオンモトブ館内にATMなし（近くにコンビニATMあり）<br>
+            🚕 タクシー乗る前に「カード使えますか？」確認<br>
+            ☀️ 日焼け止め・帽子・サングラスは必須！
+          </div>
+        </div>
+        <div class="section">
+          <div class="section-title">🗺️ 地名ふりがな</div>
+          <div class="furigana-grid">
+            <div class="furigana-item"><span class="furigana-kanji">恩納村</span> <span class="furigana-kana">おんなそん</span></div>
+            <div class="furigana-item"><span class="furigana-kanji">冨着</span> <span class="furigana-kana">ふちゃく</span></div>
+            <div class="furigana-item"><span class="furigana-kanji">読谷村</span> <span class="furigana-kana">よみたんそん</span></div>
+            <div class="furigana-item"><span class="furigana-kanji">座喜味城跡</span> <span class="furigana-kana">ざきみじょうあと</span></div>
+            <div class="furigana-item"><span class="furigana-kanji">残波岬</span> <span class="furigana-kana">ざんぱみさき</span></div>
+            <div class="furigana-item"><span class="furigana-kanji">本部町</span> <span class="furigana-kana">もとぶちょう</span></div>
+            <div class="furigana-item"><span class="furigana-kanji">備瀬</span> <span class="furigana-kana">びせ</span></div>
+            <div class="furigana-item"><span class="furigana-kanji">首里城</span> <span class="furigana-kana">しゅりじょう</span></div>
+            <div class="furigana-item"><span class="furigana-kanji">首里杜館</span> <span class="furigana-kana">すいむいかん</span></div>
+            <div class="furigana-item"><span class="furigana-kanji">守礼門</span> <span class="furigana-kana">しゅれいもん</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    var TABS = [
+      { id: "day1", label: "1日目", emoji: "✈️", date: "7/6(月)" },
+      { id: "day2", label: "2日目", emoji: "🐠", date: "7/7(火)" },
+      { id: "day3", label: "3日目", emoji: "🐋", date: "7/8(水)" },
+      { id: "day4", label: "4日目", emoji: "🏠", date: "7/9(木)" },
+      { id: "info", label: "情報", emoji: "📞", date: "" }
+    ];
+
+    var tabBtns = document.querySelectorAll(".tab-btn");
+    var panels = document.querySelectorAll(".tab-panel");
+    var dayHeader = document.getElementById("day-header");
+
+    function switchTab(tabId) {
+      var tab = TABS.find(function(t) { return t.id === tabId; });
+      if (!tab) return;
+
+      tabBtns.forEach(function(btn) {
+        var active = btn.dataset.tab === tabId;
+        btn.classList.toggle("active", active);
+        btn.setAttribute("aria-selected", active ? "true" : "false");
+      });
+
+      panels.forEach(function(panel) {
+        panel.classList.toggle("active", panel.id === "panel-" + tabId);
+      });
+
+      if (tab.date) {
+        dayHeader.textContent = tab.emoji + " " + tab.date + "　" + tab.label;
+        dayHeader.classList.remove("hidden");
+      } else {
+        dayHeader.classList.add("hidden");
+      }
+
+      window.scrollTo(0, 0);
+    }
+
+    tabBtns.forEach(function(btn) {
+      btn.addEventListener("click", function() {
+        switchTab(btn.dataset.tab);
+      });
+    });
+
+    document.querySelectorAll(".spot-header").forEach(function(header) {
+      header.addEventListener("click", function() {
+        header.parentElement.classList.toggle("open");
+      });
+    });
+  </script>
+</body>
+</html>
